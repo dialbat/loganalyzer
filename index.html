@@ -16,9 +16,13 @@
 
   <script>
     const out = document.getElementById("out");
+
     document.getElementById("go").addEventListener("click", async () => {
       const f = document.getElementById("file").files[0];
-      if (!f) return (out.textContent = "Pick a .txt file first.");
+      if (!f) {
+        out.textContent = "Pick a .txt file first.";
+        return;
+      }
 
       const fd = new FormData();
       fd.append("file", f);
@@ -26,11 +30,20 @@
       out.textContent = "Analyzing…";
       try {
         const r = await fetch("/analyze", { method: "POST", body: fd });
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error || JSON.stringify(j));
-        out.textContent = j.analysis || JSON.stringify(j, null, 2);
+
+        // Try JSON first; fall back to text for better diagnostics
+        const text = await r.text();
+        let payload;
+        try { payload = JSON.parse(text); } catch { payload = { raw: text }; }
+
+        if (!r.ok) {
+          const msg = payload.error || payload.message || payload.raw || `HTTP ${r.status}`;
+          throw new Error(`${msg} (HTTP ${r.status})`);
+        }
+
+        out.textContent = payload.analysis || JSON.stringify(payload, null, 2);
       } catch (e) {
-        out.textContent = "Error: " + e.message;
+        out.textContent = "Error: " + (e?.message || String(e));
       }
     });
   </script>
