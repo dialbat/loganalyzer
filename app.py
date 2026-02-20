@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from langchain_core.prompts import PromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -7,10 +7,15 @@ from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 import os
 
+MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+
 # Load environment variables from .env file
 load_dotenv()
 
 app = FastAPI(title="Log Analyzer Agent")
+
 
 # Log analysis prompt template
 log_analysis_prompt_text = """
@@ -111,3 +116,4 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
